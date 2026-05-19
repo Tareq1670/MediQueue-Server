@@ -34,8 +34,12 @@ async function run() {
 
         app.post("/add-tutors", async(req, res) => {
             const tutorsData = req.body;
-            console.log(tutorsData);
             const result = await allTutors.insertOne(tutorsData);
+            res.send(result)
+        })
+
+        app.get("/home-tutors", async(req, res) => {
+            const result = await allTutors.find().sort({ _id: -1 }).limit(6).toArray();
             res.send(result)
         })
     }
