@@ -2,7 +2,7 @@ const express = require("express");
 const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 require("dotenv").config();
 
 app.use(cors());
@@ -45,6 +45,12 @@ async function run() {
             res.send(result);
         });
 
+        app.get("/my-tutors/:id", async(req, res) => {
+            const id = req.params.id;
+            const result = await allTutors.find({userId : id}).sort({_id : -1}).toArray()
+            res.send(result)
+        })
+
         app.get("/tutors", async (req, res) => {
             try {
                 const { search, startDate, endDate } = req.query;
@@ -56,7 +62,6 @@ async function run() {
                         { name: searchRegex },
                         { category: searchRegex },
                         { teachingMode: searchRegex },
-                        { availableTime: searchRegex },
                     ];
                 }
 
@@ -81,6 +86,34 @@ async function run() {
                 });
             }
         });
+
+
+
+
+        app.patch("/edit-tutor/:id", async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const updateData = req.body;
+            const tutorData = {...updateData,startDate: new Date(req.body.startDate) }
+            const document = {
+                $set : tutorData
+            }
+            const result = await allTutors.updateOne(query, document);
+            res.send(result)
+        })
+
+
+        app.delete("/tutor-delete/:id", async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const result = await allTutors.deleteOne(query);
+            res.send(result)
+        })
+
+
+
+
+
     } finally {
         // await client.close()
     }
