@@ -103,6 +103,14 @@ async function run() {
         })
 
 
+        app.get("/tutor-details/:id", async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)}
+            const result = await allTutors.findOne(query);
+            res.send(result)
+        })
+
+
         app.delete("/tutor-delete/:id", async(req, res) => {
             const id = req.params.id;
             const query = {_id : new ObjectId(id)}
