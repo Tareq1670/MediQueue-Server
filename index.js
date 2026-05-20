@@ -26,6 +26,7 @@ async function run() {
 
         const db = client.db("MediQueue");
         const allTutors = db.collection("all-tutors");
+        const allBooking = db.collection("All-Booking");
 
         app.post("/add-tutors", async (req, res) => {
             const tutorsData = {
@@ -45,11 +46,14 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/my-tutors/:id", async(req, res) => {
+        app.get("/my-tutors/:id", async (req, res) => {
             const id = req.params.id;
-            const result = await allTutors.find({userId : id}).sort({_id : -1}).toArray()
-            res.send(result)
-        })
+            const result = await allTutors
+                .find({ userId: id })
+                .sort({ _id: -1 })
+                .toArray();
+            res.send(result);
+        });
 
         app.get("/tutors", async (req, res) => {
             try {
@@ -87,41 +91,61 @@ async function run() {
             }
         });
 
-
-
-
-        app.patch("/edit-tutor/:id", async(req, res) => {
+        app.patch("/edit-tutor/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)}
+            const query = { _id: new ObjectId(id) };
             const updateData = req.body;
-            const tutorData = {...updateData,startDate: new Date(req.body.startDate) }
+            const tutorData = {
+                ...updateData,
+                startDate: new Date(req.body.startDate),
+            };
             const document = {
-                $set : tutorData
-            }
+                $set: tutorData,
+            };
             const result = await allTutors.updateOne(query, document);
-            res.send(result)
-        })
+            res.send(result);
+        });
 
-
-        app.get("/tutor-details/:id", async(req, res) => {
+        app.get("/tutor-details/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)}
+            const query = { _id: new ObjectId(id) };
             const result = await allTutors.findOne(query);
-            res.send(result)
-        })
+            res.send(result);
+        });
 
-
-        app.delete("/tutor-delete/:id", async(req, res) => {
+        app.delete("/tutor-delete/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)}
+            const query = { _id: new ObjectId(id) };
             const result = await allTutors.deleteOne(query);
-            res.send(result)
-        })
+            res.send(result);
+        });
 
+        // Booking
+        app.post("/book-session", async (req, res) => {
+            const bookingData = req.body;
+            const tutorId = bookingData.tutorId;
 
+            const tutor = await allTutors.findOne({
+                _id: new ObjectId(tutorId),
+            });
 
+            if (!tutor) {
+                return res
+                    .status(404)
+                    .send({ success: false, message: "Tutor not found!" });
+            }
 
+            const bookingResult = await allBooking.insertOne({...bookingData,status:"Confirm"})
 
+            if(typeof tutor.totalSlot === 'string'){
+                const currentSlots = parseInt(tutor.totalSlot || 0)
+                await allTutors.updateOne({_id : new ObjectId(tutorId)},
+            {$set : {totalSlot : currentSlots - 1}})
+            }
+
+            res.send({success : true, message : "Session booked successfully!"})
+
+        });
     } finally {
         // await client.close()
     }
