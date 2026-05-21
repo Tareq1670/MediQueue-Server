@@ -161,13 +161,21 @@ async function run() {
 
         app.get("/user-book/:id", async (req, res) => {
             const id = req.params.id;
-
             const query = { userId: id };
-
-            const result = await allBooking.find(query).toArray();
-
+            const result = (await allBooking.find(query).sort({_id : -1}).toArray());
             res.send(result);
         });
+
+
+        app.patch("/user-book-update/:id", async(req, res) => {
+            const id = req.params.id;
+            const query = {_id : new ObjectId(id)};
+            const update = {
+                $set : {status : "Cancel"}
+            }
+            const result = await allBooking.updateOne(query, update)
+            res.send(result)
+        })
     } finally {
         // await client.close()
     }
