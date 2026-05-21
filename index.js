@@ -135,18 +135,25 @@ async function run() {
                     .send({ success: false, message: "Tutor not found!" });
             }
 
+            const currentSlots = Number(tutor.totalSlot || 0);
+            if (currentSlots <= 0) {
+                return res
+                    .status(400)
+                    .send({
+                        success: false,
+                        message: "No available slots left!",
+                    });
+            }
+
             const bookingResult = await allBooking.insertOne({
                 ...bookingData,
                 status: "Confirm",
             });
 
-            if (typeof tutor.totalSlot === "string") {
-                const currentSlots = parseInt(tutor.totalSlot || 0);
-                await allTutors.updateOne(
-                    { _id: new ObjectId(tutorId) },
-                    { $set: { totalSlot: currentSlots - 1 } },
-                );
-            }
+            await allTutors.updateOne(
+                { _id: new ObjectId(tutorId) },
+                { $set: { totalSlot: currentSlots - 1 } },
+            );
 
             res.send({
                 success: true,
@@ -162,20 +169,39 @@ async function run() {
         app.get("/user-book/:id", async (req, res) => {
             const id = req.params.id;
             const query = { userId: id };
-            const result = (await allBooking.find(query).sort({_id : -1}).toArray());
+            const result = await allBooking
+                .find(query)
+                .sort({ _id: -1 })
+                .toArray();
             res.send(result);
         });
 
-
-        app.patch("/user-book-update/:id", async(req, res) => {
+        app.patch("/user-book-update/:id", async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)};
+            const { tutorId } = req.body;
+            const query = { _id: new ObjectId(id) };
+
+            const tutor = await allTutors.findOne({
+                _id: new ObjectId(tutorId),
+            });
+
+            const currentSlots = Number(tutor.totalSlot);
+
+            await allTutors.updateOne(
+                { _id: new ObjectId(tutorId) },
+                {
+                    $set: {
+                        totalSlot: currentSlots + 1,
+                    },
+                },
+            );
+
             const update = {
-                $set : {status : "Cancel"}
-            }
-            const result = await allBooking.updateOne(query, update)
-            res.send(result)
-        })
+                $set: { status: "Cancel" },
+            };
+            const result = await allBooking.updateOne(query, update);
+            res.send(result);
+        });
     } finally {
         // await client.close()
     }
