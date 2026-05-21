@@ -135,16 +135,38 @@ async function run() {
                     .send({ success: false, message: "Tutor not found!" });
             }
 
-            const bookingResult = await allBooking.insertOne({...bookingData,status:"Confirm"})
+            const bookingResult = await allBooking.insertOne({
+                ...bookingData,
+                status: "Confirm",
+            });
 
-            if(typeof tutor.totalSlot === 'string'){
-                const currentSlots = parseInt(tutor.totalSlot || 0)
-                await allTutors.updateOne({_id : new ObjectId(tutorId)},
-            {$set : {totalSlot : currentSlots - 1}})
+            if (typeof tutor.totalSlot === "string") {
+                const currentSlots = parseInt(tutor.totalSlot || 0);
+                await allTutors.updateOne(
+                    { _id: new ObjectId(tutorId) },
+                    { $set: { totalSlot: currentSlots - 1 } },
+                );
             }
 
-            res.send({success : true, message : "Session booked successfully!"})
+            res.send({
+                success: true,
+                message: "Session booked successfully!",
+            });
+        });
 
+        app.get("/all-booking", async (req, res) => {
+            const result = await allBooking.find().sort({ _id: -1 }).toArray();
+            res.send(result);
+        });
+
+        app.get("/user-book/:id", async (req, res) => {
+            const id = req.params.id;
+
+            const query = { userId: id };
+
+            const result = await allBooking.find(query).toArray();
+
+            res.send(result);
         });
     } finally {
         // await client.close()
