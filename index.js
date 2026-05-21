@@ -3,6 +3,7 @@ const app = express();
 const port = process.env.PORT || 5000;
 const cors = require("cors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const { createRemoteJWKSet, jwtVerify } = require("jose-cjs");
 require("dotenv").config();
 
 app.use(cors());
@@ -18,6 +19,30 @@ const client = new MongoClient(uri, {
     },
 });
 
+const JWKS = createRemoteJWKSet(
+    new URL(`${process.env.LOCAL_URL}/api/auth/jwks`),
+);
+
+const verifyToken = async (req, res, next) => {
+    const headerToken = req?.headers?.authorization;
+
+    if (!headerToken) {
+        res.status(403).send({ success: false, message: "Unauthorize" });
+    }
+    const token = headerToken.split(" ")[1];
+
+    if (!token) {
+        res.status(403).send({ success: false, message: "Unauthorize token" });
+    }
+
+    try {
+        const { payload } = await jwtVerify(token, JWKS);
+        next();
+    } catch {
+        res.send({ success: false, message: "Token validation failed" });
+    }
+};
+
 async function run() {
     try {
         // await client.connect();
@@ -28,7 +53,7 @@ async function run() {
         const allTutors = db.collection("all-tutors");
         const allBooking = db.collection("All-Booking");
 
-        app.post("/add-tutors", async (req, res) => {
+        app.post("/add-tutors",verifyToken, async (req, res) => {
             const tutorsData = {
                 ...req.body,
                 startDate: new Date(req.body.startDate),
@@ -46,7 +71,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/my-tutors/:id", async (req, res) => {
+        app.get("/my-tutors/:id",verifyToken, async (req, res) => {
             const id = req.params.id;
             const result = await allTutors
                 .find({ userId: id })
@@ -106,8 +131,9 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/tutor-details/:id", async (req, res) => {
+        app.get("/tutor-details/:id", verifyToken, async (req, res) => {
             const id = req.params.id;
+
             const query = { _id: new ObjectId(id) };
             const result = await allTutors.findOne(query);
             res.send(result);
@@ -137,12 +163,10 @@ async function run() {
 
             const currentSlots = Number(tutor.totalSlot || 0);
             if (currentSlots <= 0) {
-                return res
-                    .status(400)
-                    .send({
-                        success: false,
-                        message: "No available slots left!",
-                    });
+                return res.status(400).send({
+                    success: false,
+                    message: "No available slots left!",
+                });
             }
 
             const bookingResult = await allBooking.insertOne({
@@ -166,7 +190,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/user-book/:id", async (req, res) => {
+        app.get("/user-book/:id",verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { userId: id };
             const result = await allBooking
