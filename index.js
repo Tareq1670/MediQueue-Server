@@ -100,20 +100,20 @@ async function run() {
                     query.startDate = {};
 
                     if (startDate) {
-                        const start = new Date(startDate);
+                        const from = new Date(startDate);
 
-                        if (!isNaN(start.getTime())) {
-                            start.setHours(0, 0, 0, 0);
-                            query.startDate.$gte = start;
+                        if (!isNaN(from.getTime())) {
+                            from.setHours(0, 0, 0, 0);
+                            query.startDate.$gte = from;
                         }
                     }
 
                     if (endDate) {
-                        const end = new Date(endDate);
+                        const to = new Date(endDate);
 
-                        if (!isNaN(end.getTime())) {
-                            end.setHours(23, 59, 59, 999);
-                            query.startDate.$lte = end;
+                        if (!isNaN(to.getTime())) {
+                            to.setHours(23, 59, 59, 999);
+                            query.startDate.$lte = to;
                         }
                     }
 
@@ -193,7 +193,7 @@ async function run() {
             const currentDate = new Date();
             const sessionDate = new Date(tutor.sessionDate);
 
-            currentDate.setHours(23, 59, 59, 999);
+            currentDate.setHours(0, 0, 0, 0);
             sessionDate.setHours(0, 0, 0, 0);
 
             if (currentDate < sessionDate) {
