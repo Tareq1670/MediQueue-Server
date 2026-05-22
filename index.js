@@ -101,20 +101,18 @@ async function run() {
 
                     if (startDate) {
                         const from = new Date(startDate);
-
-                        if (!isNaN(from.getTime())) {
-                            from.setHours(0, 0, 0, 0);
-                            query.startDate.$gte = from;
-                        }
+                        from.setHours(0, 0, 0, 0);
+                        query.startDate.$gte = new Date(
+                            from.getTime() - from.getTimezoneOffset() * 60000,
+                        );
                     }
 
                     if (endDate) {
                         const to = new Date(endDate);
-
-                        if (!isNaN(to.getTime())) {
-                            to.setHours(23, 59, 59, 999);
-                            query.startDate.$lte = to;
-                        }
+                        to.setHours(23, 59, 59, 999);
+                        query.startDate.$lte = new Date(
+                            to.getTime() - to.getTimezoneOffset() * 60000,
+                        );
                     }
 
                     if (Object.keys(query.startDate).length === 0) {
