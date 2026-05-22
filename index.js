@@ -88,6 +88,7 @@ async function run() {
 
                 if (search) {
                     const searchRegex = { $regex: search, $options: "i" };
+
                     query.$or = [
                         { name: searchRegex },
                         { category: searchRegex },
@@ -99,14 +100,25 @@ async function run() {
                     query.startDate = {};
 
                     if (startDate) {
-                        query.startDate.$gte = new Date(startDate);
+                        const start = new Date(startDate);
+
+                        if (!isNaN(start.getTime())) {
+                            start.setHours(0, 0, 0, 0);
+                            query.startDate.$gte = start;
+                        }
                     }
 
                     if (endDate) {
-                        const formattedEndDate = new Date(endDate);
-                        formattedEndDate.setHours(23, 59, 59, 999);
+                        const end = new Date(endDate);
 
-                        query.startDate.$lte = formattedEndDate;
+                        if (!isNaN(end.getTime())) {
+                            end.setHours(23, 59, 59, 999);
+                            query.startDate.$lte = end;
+                        }
+                    }
+
+                    if (Object.keys(query.startDate).length === 0) {
+                        delete query.startDate;
                     }
                 }
 
