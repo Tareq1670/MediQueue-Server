@@ -193,7 +193,7 @@ async function run() {
             const currentDate = new Date();
             const sessionDate = new Date(tutor.sessionDate);
 
-            currentDate.setHours(0, 0, 0, 0);
+            currentDate.setHours(23, 59, 59, 999);
             sessionDate.setHours(0, 0, 0, 0);
 
             if (currentDate < sessionDate) {
