@@ -102,17 +102,13 @@ async function run() {
                     if (startDate) {
                         const from = new Date(startDate);
                         from.setHours(0, 0, 0, 0);
-                        query.startDate.$gte = new Date(
-                            from.getTime() - from.getTimezoneOffset() * 60000,
-                        );
+                        query.startDate.$gte = from;
                     }
 
                     if (endDate) {
                         const to = new Date(endDate);
                         to.setHours(23, 59, 59, 999);
-                        query.startDate.$lte = new Date(
-                            to.getTime() - to.getTimezoneOffset() * 60000,
-                        );
+                        query.startDate.$lte = to;
                     }
 
                     if (Object.keys(query.startDate).length === 0) {
@@ -133,7 +129,6 @@ async function run() {
                 });
             }
         });
-
         app.patch("/edit-tutor/:id", async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
