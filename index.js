@@ -53,7 +53,7 @@ async function run() {
         const allTutors = db.collection("all-tutors");
         const allBooking = db.collection("All-Booking");
 
-        app.post("/add-tutors",verifyToken, async (req, res) => {
+        app.post("/add-tutors", verifyToken, async (req, res) => {
             const tutorsData = {
                 ...req.body,
                 startDate: new Date(req.body.startDate),
@@ -71,7 +71,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/my-tutors/:id",verifyToken, async (req, res) => {
+        app.get("/my-tutors/:id", verifyToken, async (req, res) => {
             const id = req.params.id;
             const result = await allTutors
                 .find({ userId: id })
@@ -83,6 +83,7 @@ async function run() {
         app.get("/tutors", async (req, res) => {
             try {
                 const { search, startDate, endDate } = req.query;
+
                 const query = {};
 
                 if (search) {
@@ -96,17 +97,24 @@ async function run() {
 
                 if (startDate || endDate) {
                     query.startDate = {};
-                    if (startDate) query.startDate.$gte = new Date(startDate);
-                    if (endDate)
-                        query.startDate.$lte = new Date(
-                            new Date(endDate).setHours(23, 59, 59, 999),
-                        );
+
+                    if (startDate) {
+                        query.startDate.$gte = new Date(startDate);
+                    }
+
+                    if (endDate) {
+                        const formattedEndDate = new Date(endDate);
+                        formattedEndDate.setHours(23, 59, 59, 999);
+
+                        query.startDate.$lte = formattedEndDate;
+                    }
                 }
 
                 const result = await allTutors
                     .find(query)
                     .sort({ startDate: -1 })
                     .toArray();
+
                 res.send(result);
             } catch (error) {
                 res.status(500).send({
@@ -162,10 +170,24 @@ async function run() {
             }
 
             const currentSlots = Number(tutor.totalSlot || 0);
+
             if (currentSlots <= 0) {
                 return res.status(400).send({
                     success: false,
                     message: "No available slots left!",
+                });
+            }
+
+            const currentDate = new Date();
+            const sessionDate = new Date(tutor.sessionDate);
+
+            currentDate.setHours(0, 0, 0, 0);
+            sessionDate.setHours(0, 0, 0, 0);
+
+            if (currentDate < sessionDate) {
+                return res.status(400).send({
+                    success: false,
+                    message: "Booking is not available yet for this tutor",
                 });
             }
 
@@ -190,7 +212,7 @@ async function run() {
             res.send(result);
         });
 
-        app.get("/user-book/:id",verifyToken, async (req, res) => {
+        app.get("/user-book/:id", verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { userId: id };
             const result = await allBooking
@@ -237,5 +259,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(port, () => {
-    console.log(`Mediqueue server site run port : ${port}`);
+    // console.log(`Mediqueue server site run port : ${port}`);
 });
